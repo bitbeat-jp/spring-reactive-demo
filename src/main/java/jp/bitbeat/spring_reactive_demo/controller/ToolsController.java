@@ -9,6 +9,9 @@ import reactor.core.publisher.Mono;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -17,18 +20,26 @@ import java.util.regex.Pattern;
 @RestController
 public class ToolsController {
 
-    private record UrlEncodeParam(String urlEncodeValue) {}
+    public record UrlEncodeParam(String urlEncodeValue) {}
 
-    private record UrlEncodeResponse(String status, String urlEncodedValue) {}
+    public record UrlEncodeResponse(String status, String urlEncodedValue) {}
 
-    private record UrlDecodeParam(String urlDecodeValue) {}
+    public record UrlDecodeParam(String urlDecodeValue) {}
 
-    private record UrlDecodeResponse(String status, String urlDecodedValue) {}
+    public record UrlDecodeResponse(String status, String urlDecodedValue) {}
 
-    private record RegexpCheckParam(String targetText, String pattern, Boolean ignoreCase, Boolean global, Boolean multiLine) {}
+    public record RegexpCheckParam(String targetText, String pattern, Boolean ignoreCase, Boolean global, Boolean multiLine) {}
 
-    private record Match(int start, String match, String[] groups) {}
-    private record RegexpCheckResponse(String status, String resultText, List<Match> matches) {}
+    public record Match(int start, String match, String[] groups) {}
+    public record RegexpCheckResponse(String status, String resultText, List<Match> matches) {}
+
+    public record DateTimeDiffParam(LocalDateTime datetime1, LocalDateTime datetime2) {}
+
+    public record DateTimeDiffResponse(String status, long resultSeconds) {}
+
+    public record DateTimeCalcParam(LocalDateTime baseDateTime, LocalTime addTime, Boolean isSubtraction) {}
+
+    public record DateTimeCalcResponse(String status, LocalDateTime resultDateTime) {}
 
     @PostMapping("/tools/url-encode")
     public Mono<UrlEncodeResponse> urlEncode(@RequestBody UrlEncodeParam param) {
@@ -75,5 +86,26 @@ public class ToolsController {
         catch (IllegalArgumentException e) {
             return Mono.error(e);
         }
+    }
+
+    @PostMapping("/tools/datetime-diff")
+    public Mono<DateTimeDiffResponse> dateTimeDiff(@RequestBody DateTimeDiffParam param) {
+        Duration duration = Duration.between(param.datetime1(), param.datetime2()).abs();
+        return Mono.just(new DateTimeDiffResponse(ResponseStatus.SUCCESS.value(), duration.getSeconds()));
+    }
+
+    @PostMapping("/tools/datetime-calc")
+    public Mono<DateTimeCalcResponse> dateTimeCalc(@RequestBody DateTimeCalcParam param) {
+        Duration duration = Duration.ZERO
+                .plusHours(param.addTime().getHour())
+                .plusMinutes(param.addTime().getMinute())
+                .plusSeconds(param.addTime().getSecond());
+        LocalDateTime resultDateTime;
+        if (Boolean.TRUE.equals(param.isSubtraction())) {
+            resultDateTime = param.baseDateTime().minus(duration);
+        } else {
+            resultDateTime = param.baseDateTime().plus(duration);
+        }
+        return Mono.just(new DateTimeCalcResponse(ResponseStatus.SUCCESS.value(), resultDateTime));
     }
 }
