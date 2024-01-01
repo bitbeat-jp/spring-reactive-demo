@@ -16,6 +16,32 @@
 	<properties>
 		<java.version>17</java.version>
 	</properties>
+
+    <!--
+      Fixing the following error message when compiling on MacOS with Apple M1 chip.
+      > Unable to load io.netty.resolver.dns.macos.MacOSDnsServerAddressStreamProvider,fallback to system defaults.
+      > This may result in incorrect DNS resolutions on MacOS.
+      > java.lang.ClassNotFoundException: io.netty.resolver.dns.macos.MacOSDnsServerAddressStreamProvider
+    -->
+	<profiles>
+		<profile>
+			<id>macos-m1</id>
+			<activation>
+				<os>
+					<family>mac</family>
+					<arch>aarch64</arch>
+				</os>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>io.netty</groupId>
+					<artifactId>netty-resolver-dns-native-macos</artifactId>
+					<classifier>osx-aarch_64</classifier>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
